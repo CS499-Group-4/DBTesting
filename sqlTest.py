@@ -3,7 +3,7 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy.exc import IntegrityError
 
 # Define the database URL
-DATABASE_URL = "sqlite:///courses.db"
+DATABASE_URL = "sqlite:///db/courses.db"
 # Create the engine
 engine = create_engine(DATABASE_URL, echo=False)
 # Define the base class for the ORM models
