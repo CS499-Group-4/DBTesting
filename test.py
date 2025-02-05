@@ -1,4 +1,4 @@
-from DBTesting.libs.DatabaseManager import DatabaseManager
+from lib.DatabaseManager import DatabaseManager
 
 dbm = DatabaseManager()
 
