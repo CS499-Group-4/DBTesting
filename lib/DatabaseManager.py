@@ -107,8 +107,8 @@ class DatabaseManager:
         self.session.add(classroom)
         self.safe_commit()
 
-    def add_course(self, course_id, name, req_room=None):
-        course = Course(CourseID = course_id, Name=name, ReqRoom=req_room)
+    def add_course(self, course_id, req_room=None):
+        course = Course(CourseID = course_id, ReqRoom=req_room)
         self.session.add(course)
         self.safe_commit()
 
