@@ -1,0 +1,2 @@
+#ignore __pycache__ folder since it's made by python every time you run the code
+__pycache__/
