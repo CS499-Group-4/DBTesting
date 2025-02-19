@@ -13,9 +13,9 @@ class Faculty(Base):
     __tablename__ = 'faculty'
     FacultyID = Column(Integer, primary_key=True, autoincrement=True, unique=True)
     Name = Column(String, nullable=False, unique=True)
-    Class1 = Column(String, nullable=True)
-    Class2 = Column(String, nullable=True)
-    Class3 = Column(String, nullable=True)
+    Class1 = Column(String, ForeignKey('course.CourseID'),nullable=True)
+    Class2 = Column(String, ForeignKey('course.CourseID'), nullable=True)
+    Class3 = Column(String, ForeignKey('course.CourseID'), nullable=True)
     Preference = Column(String, nullable=True)
 
 # Classroom table
@@ -29,7 +29,6 @@ class Classroom(Base):
 class Course(Base):
     __tablename__ = 'course'
     CourseID = Column(String, primary_key=True, unique=True)
-    Name = Column(String, nullable=False)
     ReqRoom = Column(Integer, nullable=True)
     # ReqRoom = Column(Integer, ForeignKey('classroom.RoomID'), nullable=True)  # Uncomment for foreign key
 
@@ -41,27 +40,27 @@ class TimeSlot(Base):
     StartTime = Column(String, nullable=False)
 
 # Conflict table
-class Conflict(Base):
-    __tablename__ = 'conflict'
+class ScheduleConflict(Base):
+    __tablename__ = 'schedule_conflict'
     ConflictID = Column(Integer, primary_key=True, autoincrement=True, unique=True)
-    Severity = Column(Enum('L', 'M', 'H'), nullable=False)  # Low, Medium, High
-    Type = Column(String, nullable=False)  # Room, Professor, Preference
+    SchedID = Column(Integer, ForeignKey('schedule.SchedID'), nullable=False)
+    GroupID = Column(Integer, ForeignKey('conflict_group.GroupID'), nullable=False)
+
+# Conflict Group table
+class ConflictGroup(Base):
+    __tablename__ = 'conflict_group'
+    GroupID = Column(Integer, primary_key=True, autoincrement=True, unique=True)
+    Type = Column(String, nullable=False)  # Room, Professor, Preference (probably will be enum later)
+
 
 # Schedule table
 class Schedule(Base):
     __tablename__ = 'schedule'
     SchedID = Column(Integer, primary_key=True, autoincrement=True, unique=True)
-    TimeSlot = Column(Integer, nullable=False)
-    Faculty = Column(Integer, nullable=False)
-    Course = Column(Integer, nullable=False)
-    Classroom = Column(Integer, nullable=False)
-    Conflict = Column(Integer, nullable=True)
-    # TimeSlot = Column(Integer, ForeignKey('timeslot.UniqueID'), nullable=False)  # Uncomment for foreign key
-    # Faculty = Column(Integer, ForeignKey('faculty.FacultyID'), nullable=False)  # Uncomment for foreign key
-    # Course = Column(Integer, ForeignKey('course.CourseID'), nullable=False)    # Uncomment for foreign key
-    # Classroom = Column(Integer, ForeignKey('classroom.RoomID'), nullable=False)  # Uncomment for foreign key
-    # Conflict = Column(Integer, ForeignKey('conflict.UniqueID'), nullable=True) # Uncomment for foreign key
-
+    TimeSlot = Column(Integer, ForeignKey('timeslot.SlotID'), nullable=False)
+    Professor = Column(Integer, ForeignKey('faculty.FacultyID'), nullable=False)
+    Course = Column(Integer, ForeignKey('course.CourseID'), nullable=False)
+    Classroom = Column(Integer, ForeignKey('classroom.RoomID'),nullable=False)
 
 class DatabaseManager:
     def __init__(self, database_url="sqlite:///test.db"):
@@ -94,10 +93,8 @@ class DatabaseManager:
             self.session.rollback()
 
 
-
-
     # Functions for adding entries to the database
-    def add_faculty(self, name, class1=None, class2=None, class3=None, preference=None):
+    def add_faculty(self, name, class1, class2, class3, preference=None):
         faculty = Faculty(Name=name, Class1=class1, Class2=class2, Class3=class3, Preference=preference)
         self.session.add(faculty)
         self.safe_commit()
@@ -108,7 +105,7 @@ class DatabaseManager:
         self.safe_commit()
 
     def add_course(self, course_id, req_room=None):
-        course = Course(CourseID = course_id, ReqRoom=req_room)
+        course = Course(CourseID=course_id, ReqRoom=req_room)
         self.session.add(course)
         self.safe_commit()
 
@@ -117,8 +114,13 @@ class DatabaseManager:
         self.session.add(timeslot)
         self.safe_commit()
 
-    def add_conflict(self, severity, conflict_type):
-        conflict = Conflict(Severity=severity, Type=conflict_type)
+    def add_conflict_group(self, conflict_type):
+        conflict_group = ConflictGroup(Type=conflict_type)
+        self.session.add(conflict_group)
+        self.safe_commit()
+
+    def add_schedule_conflict(self, sched_id, group_id):
+        conflict = ScheduleConflict(SchedID=sched_id, GroupID=group_id)
         self.session.add(conflict)
         self.safe_commit()
 
@@ -139,6 +141,13 @@ class DatabaseManager:
     
     def get_timeslot(self):
         return self.session.query(TimeSlot).all()
+    
+    def get_conflict(self):
+        return self.session.query(ScheduleConflict).all()
+
+    def get_conflictGroup(self):
+        return self.session.query(ConflictGroup).all()
+    
 
 # # Example usage
 # if __name__ == "__main__":
