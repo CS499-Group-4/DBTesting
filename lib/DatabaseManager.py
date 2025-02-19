@@ -57,10 +57,10 @@ class ConflictGroup(Base):
 class Schedule(Base):
     __tablename__ = 'schedule'
     SchedID = Column(Integer, primary_key=True, autoincrement=True, unique=True)
-    TimeSlot = Column(Integer, ForeignKey('timeslot.SlotID'), nullable=False)
+    TimeSlot = Column(Integer, ForeignKey('timeslot.SlotID'), nullable=True)
     Professor = Column(Integer, ForeignKey('faculty.FacultyID'), nullable=False)
     Course = Column(Integer, ForeignKey('course.CourseID'), nullable=False)
-    Classroom = Column(Integer, ForeignKey('classroom.RoomID'),nullable=False)
+    Classroom = Column(Integer, ForeignKey('classroom.RoomID'),nullable=True)
 
 class DatabaseManager:
     def __init__(self, database_url="sqlite:///test.db"):
