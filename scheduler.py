@@ -105,48 +105,6 @@ class CourseScheduler:
         return preferred_timeslots, prof_all_slots
 
 
-    # def assign_room(self, course, professor):
-    #     prof_all_slots = self.get_professor_availability(professor)
-
-    #     # Check all the prof's preferred timeslots
-    #     for slot in self.get_preferred_slots(professor):
-    #         # Assign the required room if it's available
-    #         if course.ReqRoom:
-    #             if not self.is_room_occupied(course.ReqRoom, slot):
-    #                 return course.ReqRoom
-    #         else:
-    #             for room in self.session.query(Classroom).all():
-    #                 if not self.is_room_occupied(room.RoomID, slot):
-    #                     return room.RoomID
-                
-
-
-
-    #     # Otherwise, pick the first available room
-    #     available_rooms = self.session.query(Classroom).all()
-    #     for room in available_rooms:
-    #         if not self.is_room_occupied(room.RoomID, slot):
-    #             return room.RoomID
-
-    #     return None
-
-    # def assign_room(self, course_id, timeslot_id):
-    #     """Assign a room ensuring no conflicts."""
-    #     course = self.session.query(Course).filter(Course.CourseID == course_id).first()
-    #     required_room = course.ReqRoom
-
-    #     if required_room:
-    #         if not self.is_room_occupied(required_room, timeslot_id):
-    #             return required_room  # Assign the required room if it's available
-
-    #     # Otherwise, pick the first available room
-    #     available_rooms = self.session.query(Classroom).all()
-    #     for room in available_rooms:
-    #         if not self.is_room_occupied(room.RoomID, timeslot_id):
-    #             return room.RoomID
-
-    #     return None  # No available room found
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
@@ -210,19 +168,3 @@ if __name__ == "__main__":
             logging.debug(f"ASSIGNED: CourseID: {course.CourseID}, Professor: {professor.Name}, Timeslot: {final_timeslot.Days} {final_timeslot.StartTime}, Room: {final_room.RoomID}")
 
             
-
-
-
-
-    # for professor in all_faculty:
-    #     potential_timeslots = scheduler.get_potential_timeslots(professor)
-    #     print(f"{professor.Name} ({professor.Preference}) can teach at the following times:")
-    #     for slot in potential_timeslots:
-    #         print(f"{slot.Days} {slot.StartTime}")
-        
-
-    #Print all timeslots from the timeslot relation
-    # timeslots = scheduler.db.get_timeslot()
-    # print(f"SlotID\tDays\tTime")
-    # for timeslot in timeslots:
-    #     print(f"{timeslot.SlotID}\t{timeslot.Days}\t{timeslot.StartTime}")
