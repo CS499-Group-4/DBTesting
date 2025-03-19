@@ -87,6 +87,17 @@ class CourseScheduler:
             and_(Schedule.Classroom == room.RoomID, Schedule.TimeSlot == timeslot.SlotID)).count() > 0
     
     
+    # Return bool if room is occupied at given time already
+    def is_roomID_occupied(self, roomID, timeslot):
+        room = self.session.query(Classroom).filter(Classroom.RoomID == roomID)
+        room = room[0]
+
+        return self.session.query(Schedule).filter(
+            and_(Schedule.Classroom == room.RoomID, Schedule.TimeSlot == timeslot.SlotID)).count() > 0
+    
+
+    
+    
     def get_professor_availability(self, professor):
         # Get all timeslots
         available_slots = self.session.query(TimeSlot).all()
@@ -124,7 +135,7 @@ if __name__ == "__main__":
 
     #Go course-by-course
     for course in sorted_courses:
-        logging.debug(f"CourseID: {course.CourseID}, Required Room: {course.ReqRoom}")
+        print(f"CourseID: {course.CourseID}, Required Room: {course.ReqRoom}")
         #For each professor to teach this course (can be removed if only one professor per course)
         for professor in (p for p in all_faculty if course.CourseID in (p.Class1, p.Class2, p.Class3)):
             preferred_timeslots, all_timeslots = scheduler.get_prof_slots(professor)
@@ -132,15 +143,17 @@ if __name__ == "__main__":
             #If required room 
             #Find a timeslot where the required room is available
             if course.ReqRoom:
-                final_room = course.ReqRoom
+                final_room = scheduler.session.query(Classroom).filter(Classroom.RoomID == course.ReqRoom)
+                final_room = final_room[0]
+
                 for slot in preferred_timeslots:
-                    if not scheduler.is_room_occupied(course.ReqRoom, slot):
+                    if not scheduler.is_room_occupied(final_room, slot):
                         final_timeslot = slot
                         break
                 #Conflict: Couldn't get preferred timeslot with required room
                 if not final_timeslot:
                     for slot in all_timeslots:
-                        if not scheduler.is_room_occupied(course.ReqRoom, slot):
+                        if not scheduler.is_room_occupied(final_room, slot):
                             final_timeslot = slot
                             break
                 #Conflict: Couldn't get any timeslot with required room
@@ -165,6 +178,6 @@ if __name__ == "__main__":
 
             #Commit to schedule table
             scheduler.db.add_schedule(final_timeslot, professor, course, final_room)
-            logging.debug(f"ASSIGNED: CourseID: {course.CourseID}, Professor: {professor.Name}, Timeslot: {final_timeslot.Days} {final_timeslot.StartTime}, Room: {final_room.RoomID}")
+            print(f"ASSIGNED: CourseID: {course.CourseID}, Professor: {professor.Name}, Timeslot: {final_timeslot.Days} {final_timeslot.StartTime}, Room: {final_room.RoomID}")
 
             

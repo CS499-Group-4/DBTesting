@@ -124,8 +124,8 @@ class DatabaseManager:
         self.session.add(conflict)
         self.safe_commit()
 
-    def add_schedule(self, timeslot, faculty, course, classroom, conflict=None):
-        schedule = Schedule(TimeSlot=timeslot, Faculty=faculty, Course=course, Classroom=classroom, Conflict=conflict)
+    def add_schedule(self, timeslot, faculty, course, classroom):
+        schedule = Schedule(TimeSlot=timeslot.SlotID, Professor=faculty.FacultyID, Course=course.CourseID, Classroom=classroom.RoomID)
         self.session.add(schedule)
         self.safe_commit()
 
@@ -133,7 +133,7 @@ class DatabaseManager:
     def get_faculty(self):
         return self.session.query(Faculty).all()
 
-    def get_classroom(self):
+    def get_classrooms(self):
         return self.session.query(Classroom).all()
     
     def get_course(self):
