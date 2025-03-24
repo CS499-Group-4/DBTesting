@@ -129,6 +129,11 @@ class DatabaseManager:
         self.session.add(schedule)
         self.safe_commit()
 
+    def DEBUG_add_schedule_manual(self, timeslot, faculty, course, classroom):
+        schedule = Schedule(TimeSlot=timeslot, Professor=faculty, Course=course, Classroom=classroom)
+        self.session.add(schedule)
+        self.safe_commit()
+
     # Simple query functions
     def get_faculty(self):
         return self.session.query(Faculty).all()
