@@ -112,6 +112,15 @@ class CourseScheduler:
         return preferred_timeslots#, prof_all_slots
 
 
+    def conflict_scan(self):
+        #For each professor and timeslot, check if they appear as a pair more than once
+        for slot in self.session.query(TimeSlot).all():
+            for prof in self.session.query(Faculty).all():
+                if self.session.query(Schedule).filter(and_(Schedule.Professor == prof.FacultyID, Schedule.TimeSlot == slot.SlotID)).count() > 1:
+                    print(f"CONFLICT: Professor {prof.FacultyID} is scheduled for {slot.SlotID} more than once")
+            for room in self.session.query(Classroom).all():
+                if self.session.query(Schedule).filter(and_(Schedule.Classroom == room.RoomID, Schedule.TimeSlot == slot.SlotID)).count() > 1:
+                    print(f"CONFLICT: Room {room.RoomID} is scheduled for {slot.SlotID} more than once")
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
@@ -120,65 +129,79 @@ if __name__ == "__main__":
     scheduler = CourseScheduler()
     #scheduler.generate_schedule()
 
-    #Sort courses by professor preference / courses with req. classroom
-    sorted_courses = scheduler.get_sorted_courses(scheduler.session)
-    all_faculty = scheduler.db.get_faculty()
+    # #Sort courses by professor preference / courses with req. classroom
+    # sorted_courses = scheduler.get_sorted_courses(scheduler.session)
+    # all_faculty = scheduler.db.get_faculty()
     
-    #To store schedule info before committing to the schedule table
-    final_timeslot = None
-    final_room = None
+    # #To store schedule info before committing to the schedule table
+    # final_timeslot = None
+    # final_room = None
 
 
-    #Go course-by-course
-    for course in sorted_courses:
-        print(f"Scheduling: CourseID: {course.CourseID}, Required Room: {course.ReqRoom}")
-        #For each professor to teach this course (can be removed if only one professor per course)
-        for professor in (p for p in all_faculty if course.CourseID in (p.Class1, p.Class2, p.Class3)):
-            #print("Getting prof slots")
-            preferred_timeslots = scheduler.get_prof_slots(professor)
+    # #Go course-by-course
+    # for course in sorted_courses:
+    #     print(f"Scheduling: CourseID: {course.CourseID}, Required Room: {course.ReqRoom}")
+    #     #For each professor to teach this course (can be removed if only one professor per course)
+    #     for professor in (p for p in all_faculty if course.CourseID in (p.Class1, p.Class2, p.Class3)):
+    #         #print("Getting prof slots")
+    #         preferred_timeslots = scheduler.get_prof_slots(professor)
             
-            #If required room 
-            #Find a timeslot where the required room is available
-            if course.ReqRoom != None:
-                final_room = scheduler.session.query(Classroom).filter(Classroom.RoomID == course.ReqRoom)
+    #         #If required room 
+    #         #Find a timeslot where the required room is available
+    #         if course.ReqRoom != None:
+    #             final_room = scheduler.session.query(Classroom).filter(Classroom.RoomID == course.ReqRoom)
                 
-                if final_room.count() == 0:
-                    print(f"ERROR: Required room {course.ReqRoom} not found in database")
-                    continue
-                final_room = final_room[0]
+    #             if final_room.count() == 0:
+    #                 print(f"ERROR: Required room {course.ReqRoom} not found in database")
+    #                 continue
+    #             final_room = final_room[0]
 
-                for slot in preferred_timeslots:
-                    if not scheduler.is_room_occupied(final_room, slot):
-                        final_timeslot = slot
-                        break
-                #Conflict: Couldn't get preferred timeslot with required room
-                if not final_timeslot:
-                    print("COULDN'T GET PREFERRED TIMESLOT WITH REQUIRED ROOM")
-                    for slot in scheduler.session.query(TimeSlot).all():
-                        if not scheduler.is_room_occupied(final_room, slot) and not scheduler.is_professor_occupied(professor, slot):
-                            final_timeslot = slot
-                            break
-                #Conflict: Couldn't get any timeslot with required room
-            #Else no required room
-            #Find a timeslot where any room is available
-            else:
-                for slot in preferred_timeslots:
-                    for room in scheduler.db.get_classrooms():
-                        if not scheduler.is_room_occupied(room, slot):
-                            final_room = room
-                            final_timeslot = slot
-                            break
-                #Conflict: Couldn't get preferred timeslot with any room
-                if not final_timeslot:
-                    for slot in all_timeslots:
-                        for room in scheduler.db.get_classrooms():
-                            if not scheduler.is_room_occupied(room, slot):
-                                final_room = room
-                                final_timeslot = slot
-                                break
-                #Conflict: Couldn't get any timeslot with any room
+    #             for slot in preferred_timeslots:
+    #                 if not scheduler.is_room_occupied(final_room, slot):
+    #                     final_timeslot = slot
+    #                     break
+    #             #Conflict: Couldn't get preferred timeslot with required room
+    #             if not final_timeslot:
+    #                 print("COULDN'T GET PREFERRED TIMESLOT WITH REQUIRED ROOM")
+    #                 for slot in scheduler.session.query(TimeSlot).all():
+    #                     if not scheduler.is_room_occupied(final_room, slot) and not scheduler.is_professor_occupied(professor, slot):
+    #                         final_timeslot = slot
+    #                         break
+    #             #Conflict: Couldn't get any timeslot with required room
+    #         #Else no required room
+    #         #Find a timeslot where any room is available
+    #         else:
+    #             for slot in preferred_timeslots:
+    #                 for room in scheduler.db.get_classrooms():
+    #                     if not scheduler.is_room_occupied(room, slot):
+    #                         final_room = room
+    #                         final_timeslot = slot
+    #                         break
+    #             #Conflict: Couldn't get preferred timeslot with any room
+    #             if not final_timeslot:
+    #                 for slot in scheduler.session.query(TimeSlot).all():
+    #                     for room in scheduler.db.get_classrooms():
+    #                         if not scheduler.is_room_occupied(room, slot):
+    #                             final_room = room
+    #                             final_timeslot = slot
+    #                             break
+    #             #Conflict: Couldn't get any timeslot with any room
 
-            #Commit to schedule table
-            scheduler.db.add_schedule(final_timeslot, professor, course, final_room)
-            print(f"ASSIGNED: CourseID: {course.CourseID}, Professor: {professor.Name}, Timeslot: {final_timeslot.Days} {final_timeslot.StartTime}, Room: {final_room.RoomID}")
+    #         #Commit to schedule table
+    #         scheduler.db.add_schedule(final_timeslot, professor, course, final_room)
+    #         print(f"ASSIGNED: CourseID: {course.CourseID}, Professor: {professor.Name}, Timeslot: {final_timeslot.Days} {final_timeslot.StartTime}, Room: {final_room.RoomID}")
+    
+    # #Add course CS 659 to courses
+    # scheduler.db.add_course("CS 659", None)
+    # #Add course CS 601 to courses
+    # scheduler.db.add_course("CS 601", None)
+    # #Add Room OKT659 to classrooms
+    # scheduler.db.add_classroom("OKT659", "OKT", 659)
 
+    
+    
+    # scheduler.db.DEBUG_add_schedule_manual(1, 9, "CS 659", "OKT659")#Double book professor conflict
+    # scheduler.db.DEBUG_add_schedule_manual(1, 11, "CS 601", "OKT131")#Double book room conflict
+    print("Running conflict scan")
+    scheduler.conflict_scan()
+    print("Conflict scan complete")
